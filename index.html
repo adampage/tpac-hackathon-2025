@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- saved from url=(0042)https://www.w3.org/2025/11/TPAC/hackathon/ -->
 <html lang="en" data-lt-installed="true"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
+
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>W3C Hackathon TPAC 2025 — Kobe</title>
 <link rel="icon" href="https://www.w3.org/2025/11/TPAC/hackathon/assets/images/favicon.ico" sizes="any">
@@ -497,7 +497,7 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
     mix-blend-mode: normal;
   }
   #visual-simulator-button {
-    position: absolute; 
+    position: absolute;
     top: 0;
     right: 0;
     padding: 20px;
@@ -566,7 +566,24 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
 			  backdrop-filter: blur(9px) brightness(0.1);
   }
 
+  /* Deuteranopia (red-green color blindness - missing green cones) */
+  body.visual-simulation-deuteranopia #visual-simulator-area {
+    backdrop-filter: url(#deuteranopia-filter);
+  }
+
 </style>
+<svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+  <defs>
+    <filter id="deuteranopia-filter">
+      <feColorMatrix type="matrix" values="
+        0.625  0.375  0     0  0
+        0.7    0.3    0     0  0
+        0      0.3    0.7   0  0
+        0      0      0     1  0
+      "/>
+    </filter>
+  </defs>
+</svg>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const panel = document.getElementById("visual-simulation-panel");
@@ -692,21 +709,21 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
         <span class="stud green" aria-hidden="true"></span> Schedule (JST)
       </h3>
       <ul>
-        
+
         <li>19:00 — Check-in &amp; challenge overview</li>
-        
+
         <li>19:30 — Building starts (90 minutes)</li>
-        
+
         <li>21:00 — Submissions close</li>
-        
+
         <li>21:30 — Lightning demos &amp; voting</li>
-        
+
         <li>22:00 — Prizes &amp; wrap-up</li>
-        
+
       </ul>
-      
+
       <p style="margin-top: 10px">Dinner will be provided throughout the event.</p>
-      
+
     </article>
   </div>
 </section>
@@ -715,37 +732,37 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
   <h2 id="challenge-title">Choose Your Challenge</h2>
   <p class="lead">Pick one track and keep scope tiny. The exact challenges will be revealed closer to the date.</p>
   <div class="cards">
-    
+
     <article class="card half">
       <h3 class="card-title">
         <span class="stud yellow" aria-hidden="true"></span> Challenge #1: CSS Playground
       </h3>
       <p>Create a wild CSS demo</p>
-      
+
       <hr style="
           border: none;
           border-top: 2px solid rgba(60, 59, 59, 0.06);
           margin: 12px 0;
         ">
       <p>Put your coding skills to use to build anything that shows off the power (and weirdness) of CSS. Using HTML and JavaScript is fine. AI tools are allowed—just be ready to explain your process.</p>
-       
+
     </article>
-    
+
     <article class="card half">
       <h3 class="card-title">
         <span class="stud red" aria-hidden="true"></span> Challenge #2: Dashboard
       </h3>
       <p>Build a small dashboard or visualization</p>
-      
+
       <hr style="
           border: none;
           border-top: 2px solid rgba(60, 59, 59, 0.06);
           margin: 12px 0;
         ">
       <p>Create something that gathers or presents information in a useful way: could be related to W3C, the Web, or anything you care about. It can be just a concept or a working prototype.</p>
-       
+
     </article>
-    
+
   </div>
 </section>
 
@@ -761,15 +778,15 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
         Rules
       </h3>
       <ul>
-        
+
         <li>You have 90 minutes to build or sketch.</li>
-        
+
         <li>Work solo or in a pair.</li>
-        
+
         <li>All work should be created during the hackathon, but reusing your own snippets is fine.</li>
-        
+
         <li>AI tools are allowed—just be ready to explain your process.</li>
-        
+
       </ul>
     </article>
     <article class="card half" aria-label="Submission format">
@@ -778,21 +795,21 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
         Submission Format
       </h3>
       <ul>
-        
+
         <li>Create a GitHub repository for your project.</li>
-        
+
         <li>Include your code + any other materials in the repo.</li>
-        
+
         <li>Post your project in the GH repo Issue thread for the relevant challenge. Include title, hacker(s), description, repo url and a screenshot.</li>
-        
+
       </ul>
-      
+
       <p>
-        
+
         <a href="https://github.com/w3c/hackathon-tpac-2025/issues" style="text-decoration: underline">Submission Issues ↗</a>
-        
+
       </p>
-      
+
     </article>
   </div>
 </section>
@@ -802,11 +819,11 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
     Submissions
   </h2>
   <p>Projects will be showcased here after the event.</p>
-  <!-- 
+  <!--
   <p class="lead">All projects will appear here.</p>
-   
+
   <div class="mosaic" role="list" aria-label="Submissions grid">
-       
+
 
     <div class="submission">
       <a
@@ -821,17 +838,17 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
         <div class="tile-label">Example name of a project</div>
       </a>
       <div class="authors">
-         
+
         <a
           href="https://github.com/alice"
           target="_blank"
           rel="noopener"
           >Alice Example</a
         >
-          
+
       </div>
     </div>
-      
+
 
     <div class="submission">
       <a
@@ -846,24 +863,24 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
         <div class="tile-label">Example name of another project</div>
       </a>
       <div class="authors">
-         
+
         <a
           href="https://github.com/bob"
           target="_blank"
           rel="noopener"
           >Bob Example</a
         >
-         ,   
+         ,
         <a
           href="https://github.com/charliedev"
           target="_blank"
           rel="noopener"
           >Charlie Dev</a
         >
-          
+
       </div>
     </div>
-     
+
   </div> -->
 </section>
 
@@ -871,24 +888,24 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
   <h2 id="sponsors-title">
     Sponsors
   </h2>
-  
+
   <p class="lead sponsors">Thank you to the supporters making this event possible!</p>
-  
+
 
   <div class="sponsor-grid" role="list">
-    
+
     <a class="sponsor" role="listitem" href="https://holopin.io/" target="_blank" rel="noopener" aria-label="Holopin">
-      
+
       <img src="./W3C Hackathon TPAC 2025 — Kobe_files/holopin.png" alt="Holopin logo" loading="lazy" decoding="async">
-      
+
     </a>
-    
+
     <a class="sponsor" role="listitem" href="https://www.godaddy.com/" target="_blank" rel="noopener" aria-label="GoDaddy">
-      
+
       <img src="./W3C Hackathon TPAC 2025 — Kobe_files/godaddy.png" alt="GoDaddy logo" loading="lazy" decoding="async">
-      
+
     </a>
-    
+
   </div>
 </section>
 
@@ -902,6 +919,6 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
   </div>
 </footer>
 
-  
+
 
 <div id="unA40Editor" class="un-a40editor" aria-hidden="true"></div></body></html>
