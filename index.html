@@ -497,7 +497,7 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
     mix-blend-mode: normal;
   }
   #visual-simulator-button {
-    position: absolute;
+    position: fixed; 
     top: 0;
     right: 0;
     padding: 20px;
@@ -546,7 +546,7 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
   body.visual-simulation-low-vision #visual-simulator-area {
     backdrop-filter: blur(5px) contrast(0.7) brightness(1.1);
   }
-  /*tunnel vision*/
+  /*glaucoma vision*/
   body.visual-simulation-glaucoma #visual-simulator-area {
     mask-image: radial-gradient(circle at center,
       rgba(0,0,0,1) 0%,
@@ -554,7 +554,7 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
       rgba(0,0,0,0.4) 35%,
       rgba(0,0,0,0) 55%
     );
-    background: rgba(0,0,0,0.55);
+    background: rgba(0,0,0,0.9);
   }
   /*tunnel vision*/
   body.visual-simulation-tunnel-vision #visual-simulator-area {
