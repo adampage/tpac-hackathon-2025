@@ -642,12 +642,18 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const panel = document.getElementById("visual-simulation-panel");
-
+    let className = '';
     panel.addEventListener("click", e => {
-      if (e.target.id !== 'dialog_close_btn'){
-        const toggle = e.target.dataset.sim;
+
+      if (e.target.id !== "dialog_close_btn"){
+        document.querySelectorAll("#visual-simulation-panel .active").forEach(el => {
+          el.classList.remove("active");
+          document.body.classList.toggle(className);
+        });
+        const toggle = e.target.dataset.sim;    
         document.body.classList.toggle(toggle);
-        e.target.classList.toggle("active");
+        e.target.classList.add("active");
+        className = toggle;
       }
     });
   });
