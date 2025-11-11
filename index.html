@@ -581,6 +581,17 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
     backdrop-filter: url(#tritanopia-filter);
   }
 
+  /* Achromatopsia (complete color blindness - grayscale vision) */
+  body.visual-simulation-achromatopsia #visual-simulator-area {
+    backdrop-filter: grayscale(100%) brightness(0.9);
+  }
+
+  /* Cataracts (cloudy, blurred vision with reduced contrast) */
+  body.visual-simulation-cataracts #visual-simulator-area {
+    backdrop-filter: blur(3px) contrast(0.6) brightness(1.2);
+    background: rgba(255, 255, 220, 0.15);
+  }
+
 </style>
 <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
   <defs>
