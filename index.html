@@ -592,6 +592,24 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
     background: rgba(255, 255, 220, 0.15);
   }
 
+  /* Glare (bright spots that make it hard to see) */
+  body.visual-simulation-glare #visual-simulator-area {
+    background: radial-gradient(
+      circle at 70% 30%,
+      rgba(255, 255, 255, 0.7) 0%,
+      rgba(255, 255, 255, 0.4) 15%,
+      rgba(255, 255, 255, 0.1) 30%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 30% 70%,
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(255, 255, 255, 0.2) 20%,
+      transparent 40%
+    );
+    backdrop-filter: brightness(1.3) contrast(0.85);
+  }
+
 </style>
 <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
   <defs>
