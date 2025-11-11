@@ -497,7 +497,7 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
     mix-blend-mode: normal;
   }
   #visual-simulator-button {
-    position: fixed; 
+    position: fixed;
     top: 0;
     right: 0;
     padding: 20px;
@@ -571,6 +571,16 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
     backdrop-filter: url(#deuteranopia-filter);
   }
 
+  /* Protanopia (red-green color blindness - missing red cones) */
+  body.visual-simulation-protanopia #visual-simulator-area {
+    backdrop-filter: url(#protanopia-filter);
+  }
+
+  /* Tritanopia (blue-yellow color blindness - missing blue cones) */
+  body.visual-simulation-tritanopia #visual-simulator-area {
+    backdrop-filter: url(#tritanopia-filter);
+  }
+
 </style>
 <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
   <defs>
@@ -579,6 +589,22 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
         0.625  0.375  0     0  0
         0.7    0.3    0     0  0
         0      0.3    0.7   0  0
+        0      0      0     1  0
+      "/>
+    </filter>
+    <filter id="protanopia-filter">
+      <feColorMatrix type="matrix" values="
+        0.567  0.433  0     0  0
+        0.558  0.442  0     0  0
+        0      0.242  0.758 0  0
+        0      0      0     1  0
+      "/>
+    </filter>
+    <filter id="tritanopia-filter">
+      <feColorMatrix type="matrix" values="
+        0.95   0.05   0     0  0
+        0      0.433  0.567 0  0
+        0      0.475  0.525 0  0
         0      0      0     1  0
       "/>
     </filter>
