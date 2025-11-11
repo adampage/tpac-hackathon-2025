@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<!-- saved from url=(0042)https://www.w3.org/2025/11/TPAC/hackathon/ -->
+<html lang="en" data-lt-installed="true"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>W3C Hackathon TPAC 2025 — Kobe</title>
+<link rel="icon" href="https://www.w3.org/2025/11/TPAC/hackathon/assets/images/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="https://www.w3.org/2025/11/TPAC/hackathon/assets/images/favicon.png">
+<link rel="apple-touch-icon" href="https://www.w3.org/2025/11/TPAC/hackathon/assets/images/favicon.png">
+<meta name="description" content="Build a tiny web demo or propose a community tool idea.">
+<meta property="og:image" content="/2025/11/TPAC/hackathon/assets/images/social-card.png">
+<link rel="stylesheet" href="./W3C Hackathon TPAC 2025 — Kobe_files/style.css">
+
+<script>
+  //THANKS APG FOR THIS AMAZING ACCESSIBLE DIALOG
+
+  /*
+ *   This content is licensed according to the W3C Software License at
+ *   https://www.w3.org/Consortium/Legal/2015/copyright-software-and-document
+ */
+
+  /*
+ *   This content is licensed according to the W3C Software License at
+ *   https://www.w3.org/Consortium/Legal/2015/copyright-software-and-document
+ */
+
+'use strict';
+
+var aria = aria || {};
+
+aria.Utils = aria.Utils || {};
+
+(function () {
+  /*
+   * When util functions move focus around, set this true so the focus listener
+   * can ignore the events.
+   */
+  aria.Utils.IgnoreUtilFocusChanges = false;
+
+  aria.Utils.dialogOpenClass = 'has-dialog';
+
+  /**
+   * @description Set focus on descendant nodes until the first focusable element is
+   *       found.
+   * @param element
+   *          DOM node for which to find the first focusable descendant.
+   * @returns {boolean}
+   *  true if a focusable element is found and focus is set.
+   */
+  aria.Utils.focusFirstDescendant = function (element) {
+    for (var i = 0; i < element.childNodes.length; i++) {
+      var child = element.childNodes[i];
+      if (
+        aria.Utils.attemptFocus(child) ||
+        aria.Utils.focusFirstDescendant(child)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }; // end focusFirstDescendant
+
+  /**
+   * @description Find the last descendant node that is focusable.
+   * @param element
+   *          DOM node for which to find the last focusable descendant.
+   * @returns {boolean}
+   *  true if a focusable element is found and focus is set.
+   */
+  aria.Utils.focusLastDescendant = function (element) {
+    for (var i = element.childNodes.length - 1; i >= 0; i--) {
+      var child = element.childNodes[i];
+      if (
+        aria.Utils.attemptFocus(child) ||
+        aria.Utils.focusLastDescendant(child)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }; // end focusLastDescendant
+
+  /**
+   * @description Set Attempt to set focus on the current node.
+   * @param element
+   *          The node to attempt to focus on.
+   * @returns {boolean}
+   *  true if element is focused.
+   */
+  aria.Utils.attemptFocus = function (element) {
+    if (!aria.Utils.isFocusable(element)) {
+      return false;
+    }
+
+    aria.Utils.IgnoreUtilFocusChanges = true;
+    try {
+      element.focus();
+    } catch (e) {
+      // continue regardless of error
+    }
+    aria.Utils.IgnoreUtilFocusChanges = false;
+    return document.activeElement === element;
+  }; // end attemptFocus
+
+  /* Modals can open modals. Keep track of them with this array. */
+  aria.OpenDialogList = aria.OpenDialogList || new Array(0);
+
+  /**
+   * @returns {object|void} the last opened dialog (the current dialog)
+   */
+  aria.getCurrentDialog = function () {
+    if (aria.OpenDialogList && aria.OpenDialogList.length) {
+      return aria.OpenDialogList[aria.OpenDialogList.length - 1];
+    }
+  };
+
+  aria.closeCurrentDialog = function () {
+    var currentDialog = aria.getCurrentDialog();
+    if (currentDialog) {
+      currentDialog.close();
+      return true;
+    }
+
+    return false;
+  };
+
+  aria.handleEscape = function (event) {
+    var key = event.which || event.keyCode;
+
+    if (key === aria.KeyCode.ESC && aria.closeCurrentDialog()) {
+      event.stopPropagation();
+    }
+  };
+
+  document.addEventListener('keyup', aria.handleEscape);
+
+  /**
+   * @class
+   * @description Dialog object providing modal focus management.
+   *
+   * Assumptions: The element serving as the dialog container is present in the
+   * DOM and hidden. The dialog container has role='dialog'.
+   * @param dialogId
+   *          The ID of the element serving as the dialog container.
+   * @param focusAfterClosed
+   *          Either the DOM node or the ID of the DOM node to focus when the
+   *          dialog closes.
+   * @param focusFirst
+   *          Optional parameter containing either the DOM node or the ID of the
+   *          DOM node to focus when the dialog opens. If not specified, the
+   *          first focusable element in the dialog will receive focus.
+   */
+  aria.Dialog = function (dialogId, focusAfterClosed, focusFirst) {
+    this.dialogNode = document.getElementById(dialogId);
+    if (this.dialogNode === null) {
+      throw new Error('No element found with id="' + dialogId + '".');
+    }
+
+    var validRoles = ['dialog', 'alertdialog'];
+    var isDialog = (this.dialogNode.getAttribute('role') || '')
+      .trim()
+      .split(/\s+/g)
+      .some(function (token) {
+        return validRoles.some(function (role) {
+          return token === role;
+        });
+      });
+    if (!isDialog) {
+      throw new Error(
+        'Dialog() requires a DOM element with ARIA role of dialog or alertdialog.'
+      );
+    }
+
+    // Wrap in an individual backdrop element if one doesn't exist
+    // Native <dialog> elements use the ::backdrop pseudo-element, which
+    // works similarly.
+    var backdropClass = 'dialog-backdrop';
+    if (this.dialogNode.parentNode.classList.contains(backdropClass)) {
+      this.backdropNode = this.dialogNode.parentNode;
+    } else {
+      this.backdropNode = document.createElement('div');
+      this.backdropNode.className = backdropClass;
+      this.dialogNode.parentNode.insertBefore(
+        this.backdropNode,
+        this.dialogNode
+      );
+      this.backdropNode.appendChild(this.dialogNode);
+    }
+    this.backdropNode.classList.add('active');
+
+    // Disable scroll on the body element
+    document.body.classList.add(aria.Utils.dialogOpenClass);
+
+    if (typeof focusAfterClosed === 'string') {
+      this.focusAfterClosed = document.getElementById(focusAfterClosed);
+    } else if (typeof focusAfterClosed === 'object') {
+      this.focusAfterClosed = focusAfterClosed;
+    } else {
+      throw new Error(
+        'the focusAfterClosed parameter is required for the aria.Dialog constructor.'
+      );
+    }
+
+    if (typeof focusFirst === 'string') {
+      this.focusFirst = document.getElementById(focusFirst);
+    } else if (typeof focusFirst === 'object') {
+      this.focusFirst = focusFirst;
+    } else {
+      this.focusFirst = null;
+    }
+
+    // Bracket the dialog node with two invisible, focusable nodes.
+    // While this dialog is open, we use these to make sure that focus never
+    // leaves the document even if dialogNode is the first or last node.
+    var preDiv = document.createElement('div');
+    this.preNode = this.dialogNode.parentNode.insertBefore(
+      preDiv,
+      this.dialogNode
+    );
+    this.preNode.tabIndex = 0;
+    var postDiv = document.createElement('div');
+    this.postNode = this.dialogNode.parentNode.insertBefore(
+      postDiv,
+      this.dialogNode.nextSibling
+    );
+    this.postNode.tabIndex = 0;
+
+    // If this modal is opening on top of one that is already open,
+    // get rid of the document focus listener of the open dialog.
+    if (aria.OpenDialogList.length > 0) {
+      aria.getCurrentDialog().removeListeners();
+    }
+
+    this.addListeners();
+    aria.OpenDialogList.push(this);
+    this.clearDialog();
+    this.dialogNode.className = 'default_dialog'; // make visible
+
+    if (this.focusFirst) {
+      this.focusFirst.focus();
+    } else {
+      aria.Utils.focusFirstDescendant(this.dialogNode);
+    }
+
+    this.lastFocus = document.activeElement;
+  }; // end Dialog constructor
+
+  aria.Dialog.prototype.clearDialog = function () {
+    Array.prototype.map.call(
+      this.dialogNode.querySelectorAll('input'),
+      function (input) {
+        input.value = '';
+      }
+    );
+  };
+
+  /**
+   * @description
+   *  Hides the current top dialog,
+   *  removes listeners of the top dialog,
+   *  restore listeners of a parent dialog if one was open under the one that just closed,
+   *  and sets focus on the element specified for focusAfterClosed.
+   */
+  aria.Dialog.prototype.close = function () {
+    aria.OpenDialogList.pop();
+    this.removeListeners();
+    aria.Utils.remove(this.preNode);
+    aria.Utils.remove(this.postNode);
+    this.dialogNode.className = 'hidden';
+    this.backdropNode.classList.remove('active');
+    this.focusAfterClosed.focus();
+
+    // If a dialog was open underneath this one, restore its listeners.
+    if (aria.OpenDialogList.length > 0) {
+      aria.getCurrentDialog().addListeners();
+    } else {
+      document.body.classList.remove(aria.Utils.dialogOpenClass);
+    }
+  }; // end close
+
+  /**
+   * @description
+   *  Hides the current dialog and replaces it with another.
+   * @param newDialogId
+   *  ID of the dialog that will replace the currently open top dialog.
+   * @param newFocusAfterClosed
+   *  Optional ID or DOM node specifying where to place focus when the new dialog closes.
+   *  If not specified, focus will be placed on the element specified by the dialog being replaced.
+   * @param newFocusFirst
+   *  Optional ID or DOM node specifying where to place focus in the new dialog when it opens.
+   *  If not specified, the first focusable element will receive focus.
+   */
+  aria.Dialog.prototype.replace = function (
+    newDialogId,
+    newFocusAfterClosed,
+    newFocusFirst
+  ) {
+    aria.OpenDialogList.pop();
+    this.removeListeners();
+    aria.Utils.remove(this.preNode);
+    aria.Utils.remove(this.postNode);
+    this.dialogNode.className = 'hidden';
+    this.backdropNode.classList.remove('active');
+
+    var focusAfterClosed = newFocusAfterClosed || this.focusAfterClosed;
+    new aria.Dialog(newDialogId, focusAfterClosed, newFocusFirst);
+  }; // end replace
+
+  aria.Dialog.prototype.addListeners = function () {
+    document.addEventListener('focus', this.trapFocus, true);
+  }; // end addListeners
+
+  aria.Dialog.prototype.removeListeners = function () {
+    document.removeEventListener('focus', this.trapFocus, true);
+  }; // end removeListeners
+
+  aria.Dialog.prototype.trapFocus = function (event) {
+    if (aria.Utils.IgnoreUtilFocusChanges) {
+      return;
+    }
+    var currentDialog = aria.getCurrentDialog();
+    if (currentDialog.dialogNode.contains(event.target)) {
+      currentDialog.lastFocus = event.target;
+    } else {
+      aria.Utils.focusFirstDescendant(currentDialog.dialogNode);
+      if (currentDialog.lastFocus == document.activeElement) {
+        aria.Utils.focusLastDescendant(currentDialog.dialogNode);
+      }
+      currentDialog.lastFocus = document.activeElement;
+    }
+  }; // end trapFocus
+
+  window.openDialog = function (dialogId, focusAfterClosed, focusFirst) {
+    new aria.Dialog(dialogId, focusAfterClosed, focusFirst);
+  };
+
+  window.closeDialog = function (closeButton) {
+    var topDialog = aria.getCurrentDialog();
+    if (topDialog.dialogNode.contains(closeButton)) {
+      topDialog.close();
+    }
+  }; // end closeDialog
+
+  window.replaceDialog = function (
+    newDialogId,
+    newFocusAfterClosed,
+    newFocusFirst
+  ) {
+    var topDialog = aria.getCurrentDialog();
+    if (topDialog.dialogNode.contains(document.activeElement)) {
+      topDialog.replace(newDialogId, newFocusAfterClosed, newFocusFirst);
+    }
+  }; // end replaceDialog
+})();
+'use strict';
+/**
+ * @namespace aria
+ */
+
+var aria = aria || {};
+
+/**
+ * @description
+ *  Key code constants
+ */
+aria.KeyCode = {
+  BACKSPACE: 8,
+  TAB: 9,
+  RETURN: 13,
+  SHIFT: 16,
+  ESC: 27,
+  SPACE: 32,
+  PAGE_UP: 33,
+  PAGE_DOWN: 34,
+  END: 35,
+  HOME: 36,
+  LEFT: 37,
+  UP: 38,
+  RIGHT: 39,
+  DOWN: 40,
+  DELETE: 46,
+};
+
+aria.Utils = aria.Utils || {};
+
+// Polyfill src https://developer.mozilla.org/en-US/docs/Web/API/Element/matches
+aria.Utils.matches = function (element, selector) {
+  if (!Element.prototype.matches) {
+    Element.prototype.matches =
+      Element.prototype.matchesSelector ||
+      Element.prototype.mozMatchesSelector ||
+      Element.prototype.msMatchesSelector ||
+      Element.prototype.oMatchesSelector ||
+      Element.prototype.webkitMatchesSelector ||
+      function (s) {
+        var matches = element.parentNode.querySelectorAll(s);
+        var i = matches.length;
+        while (--i >= 0 && matches.item(i) !== this) {
+          // empty
+        }
+        return i > -1;
+      };
+  }
+
+  return element.matches(selector);
+};
+
+aria.Utils.remove = function (item) {
+  if (item.remove && typeof item.remove === 'function') {
+    return item.remove();
+  }
+  if (
+    item.parentNode &&
+    item.parentNode.removeChild &&
+    typeof item.parentNode.removeChild === 'function'
+  ) {
+    return item.parentNode.removeChild(item);
+  }
+  return false;
+};
+
+aria.Utils.isFocusable = function (element) {
+  if (element.tabIndex < 0) {
+    return false;
+  }
+
+  if (element.disabled) {
+    return false;
+  }
+
+  switch (element.nodeName) {
+    case 'A':
+      return !!element.href && element.rel != 'ignore';
+    case 'INPUT':
+      return element.type != 'hidden';
+    case 'BUTTON':
+    case 'SELECT':
+    case 'TEXTAREA':
+      return true;
+    default:
+      return false;
+  }
+};
+
+aria.Utils.getAncestorBySelector = function (element, selector) {
+  if (!aria.Utils.matches(element, selector + ' ' + element.tagName)) {
+    // Element is not inside an element that matches selector
+    return null;
+  }
+
+  // Move up the DOM tree until a parent matching the selector is found
+  var currentNode = element;
+  var ancestor = null;
+  while (ancestor === null) {
+    if (aria.Utils.matches(currentNode.parentNode, selector)) {
+      ancestor = currentNode.parentNode;
+    } else {
+      currentNode = currentNode.parentNode;
+    }
+  }
+
+  return ancestor;
+};
+
+aria.Utils.hasClass = function (element, className) {
+  return new RegExp('(\\s|^)' + className + '(\\s|$)').test(element.className);
+};
+
+aria.Utils.addClass = function (element, className) {
+  if (!aria.Utils.hasClass(element, className)) {
+    element.className += ' ' + className;
+  }
+};
+
+aria.Utils.removeClass = function (element, className) {
+  var classRegex = new RegExp('(\\s|^)' + className + '(\\s|$)');
+  element.className = element.className.replace(classRegex, ' ').trim();
+};
+
+aria.Utils.bindMethods = function (object /* , ...methodNames */) {
+  var methodNames = Array.prototype.slice.call(arguments, 1);
+  methodNames.forEach(function (method) {
+    object[method] = object[method].bind(object);
+  });
+};
+
+</script>
+<style>
+  #visual-simulator-area {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999999;
+    opacity: var(--sim-opacity, 1);
+    background: transparent;
+    backdrop-filter: none;
+    mix-blend-mode: normal;
+  }
+  #visual-simulator-button {
+    position: absolute; 
+    top: 0;
+    right: 0;
+    padding: 20px;
+    z-index: 1000000;
+  }
+  .hidden {
+    display: none;
+  }
+  #visual-simulation-panel {
+    position:absolute;
+    top: 0;
+    right: 0;
+    padding: 60px 20px 20px;
+    z-index: 1000000;
+    background: #FFF;
+    min-width:30%;
+    border: 1px solid #000;
+  }
+  #visual-simulation-panel #dialog_close_btn {
+    background: transparent;
+    border: 0;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: inline-block;
+    width: auto !important;
+  }
+  #visual-simulation-panel button {
+    display: block;
+    width: 100%;
+    margin: 4px 0;
+    padding: 6px;
+    font-size: 14px;
+    background: #eee;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #visual-simulation-panel button.active {
+    background: #0077ff;
+    color: white;
+    border-color: #005fcc;
+  }
+
+  /* low vision*/
+  body.visual-simulation-low-vision #visual-simulator-area {
+    backdrop-filter: blur(5px) contrast(0.7) brightness(1.1);
+  }
+  /*tunnel vision*/
+  body.visual-simulation-peripheral-loss #visual-simulator-area {
+    mask-image: radial-gradient(circle at center,
+      rgba(0,0,0,1) 0%,
+      rgba(0,0,0,1) 20%,
+      rgba(0,0,0,0.4) 35%,
+      rgba(0,0,0,0) 55%
+    );
+    background: rgba(0,0,0,0.55);
+  }
+  /*tunnel vision*/
+  body.visual-simulation-tunnel-vision #visual-simulator-area {
+    mask-image: radial-gradient(circle at center,
+			    rgba(0,0,0,0) 20%,
+			    rgba(0,0,0,0.5) 25%,
+			    rgba(0,0,0,1) 30%
+			  );
+			  backdrop-filter: blur(9px) brightness(0.1);
+  }
+
+</style>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const panel = document.getElementById("visual-simulation-panel");
+
+    panel.addEventListener("click", e => {
+      if (e.target.id !== 'dialog_close_btn'){
+        const toggle = e.target.dataset.sim;
+        document.body.classList.toggle(toggle);
+        e.target.classList.toggle("active");
+      }
+    });
+  });
+</script>
+
+  </head>
+  <body>
+    <div id="visual-simulator-area" aria-hidden="true"></div>
+    <button id="visual-simulator-button" aria-label="Visual settings" onclick="openDialog('visual-simulation-panel', this)">⚙️</button>
+    <div id="visual-simulation-panel" role="dialog" aria-modal="true" aria-label="Visual Disabilities" class="hidden">
+      <button type="button" id="dialog_close_btn" onclick="closeDialog(this)" aria-label="close">X</button>
+      <button data-sim="visual-simulation-low-vision">Low Vision</button>
+      <button data-sim="visual-simulation-peripheral-loss">Peripheral Loss</button>
+      <button data-sim="visual-simulation-tunnel-vision">Tunnel Vision</button>
+      <button data-sim="visual-simulation-floaters">Floaters</button>
+      <button data-sim="visual-simulation-glare">Glare</button>
+      <button data-sim="visual-simulation-cataracts">Cataracts</button>
+      <button data-sim="visual-simulation-glaucoma">Glaucoma</button>
+      <button data-sim="visual-simulation-achromatopsia">Achromatopsia</button>
+      <button data-sim="visual-simulation-protanopia">Protanopia</button>
+      <button data-sim="visual-simulation-deuteranopia">Deuteranopia</button>
+      <button data-sim="visual-simulation-tritanopia">Tritanopia</button>
+    </div>
+    <header>
+  <div class="container nav" role="navigation" aria-label="Main">
+    <!-- Left icon / brand -->
+    <a class="brand" href="https://www.w3.org/" aria-label="W3C website" rel="noopener" target="_blank">
+      <img src="./W3C Hackathon TPAC 2025 — Kobe_files/w3c-transparent.png" alt="W3C Logo" style="height: 50px; width: auto">
+    </a>
+
+    <nav>
+      <ul>
+        <!-- <li><a href="#challenges">Challenges</a></li> -->
+        <li><a href="https://www.w3.org/2025/11/TPAC/hackathon/#about">About</a></li>
+        <li><a href="https://www.w3.org/2025/11/TPAC/hackathon/#submissions">Submissions</a></li>
+        <li>
+          <a href="https://www.w3.org/register/tpac2025-hackathon" target="_blank" rel="noopener">Register</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+    <main id="home"><section class="hero" aria-labelledby="hero-title">
+  <div class="brick-grid" aria-hidden="true">
+    <div class="layer">
+      <div class="brick-row">
+        <div class="brick red" style="grid-column: span 3"></div>
+        <div class="brick blue" style="grid-column: span 2"></div>
+        <div class="brick yellow" style="grid-column: span 4"></div>
+        <div class="brick green" style="grid-column: span 3"></div>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="brick-row">
+        <div class="brick blue" style="grid-column: span 4"></div>
+        <div class="brick red" style="grid-column: span 5"></div>
+        <div class="brick green" style="grid-column: span 3"></div>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="brick-row">
+        <div class="brick yellow" style="grid-column: span 2"></div>
+        <div class="brick green" style="grid-column: span 4"></div>
+        <div class="brick blue" style="grid-column: span 4"></div>
+        <div class="brick red" style="grid-column: span 2"></div>
+      </div>
+    </div>
+  </div>
+  <div class="emoji-sakura" aria-hidden="true">
+    <span>🌸</span><span>🌸</span><span>🌸</span><span>🌸</span><span>🌸</span>
+    <span>🌸</span><span>🌸</span><span>🌸</span><span>🌸</span><span>🌸</span>
+    <span>🌸</span><span>🌸</span>
+  </div>
+  <div class="container">
+    <h1 id="hero-title" class="headline">
+      W3C Hackathon TPAC 2025: Kobe Edition
+    </h1>
+    <p class="subhead">
+      Join fellow TPAC attendees for an evening of quick prototyping, fresh
+      ideas, and nerdy prizes. This is your chance to build, learn, and share,
+      all in the spirit of making Web standards better.
+    </p>
+    <p class="subhead">All skill levels welcome!</p>
+
+    <div class="cta-row" id="register">
+      <a class="btn primary" href="https://www.w3.org/register/tpac2025-hackathon" target="_blank" rel="noopener">Register</a>
+      <a class="btn secondary" href="https://www.w3.org/2025/11/TPAC/hackathon/#submissions">How to Submit</a>
+    </div>
+  </div>
+</section>
+
+<section id="about" class="section container" aria-labelledby="about-title">
+  <h2 id="about-title">About</h2>
+  <p class="lead">An evening of fun awaits, beyond the formal TPAC schedule.</p>
+
+  <div class="cards">
+    <article class="card half">
+      <h3 class="card-title">
+        <span class="stud red" aria-hidden="true"></span> Date &amp; Time
+      </h3>
+      <p>
+        <strong>Date:</strong> 11 November, 2025 &nbsp;
+        <strong>Time:</strong> 19:00–22:30 JST
+      </p>
+    </article>
+    <article class="card half">
+      <h3 class="card-title">
+        <span class="stud blue" aria-hidden="true"></span> Location
+      </h3>
+      <p><strong>Venue:</strong> Room 501/502, International Conference Center, Kobe</p>
+    </article>
+    <article class="card full">
+      <h3 class="card-title">
+        <span class="stud green" aria-hidden="true"></span> Schedule (JST)
+      </h3>
+      <ul>
+        
+        <li>19:00 — Check-in &amp; challenge overview</li>
+        
+        <li>19:30 — Building starts (90 minutes)</li>
+        
+        <li>21:00 — Submissions close</li>
+        
+        <li>21:30 — Lightning demos &amp; voting</li>
+        
+        <li>22:00 — Prizes &amp; wrap-up</li>
+        
+      </ul>
+      
+      <p style="margin-top: 10px">Dinner will be provided throughout the event.</p>
+      
+    </article>
+  </div>
+</section>
+
+<section id="challenges" class="section container" aria-labelledby="challenge-title">
+  <h2 id="challenge-title">Choose Your Challenge</h2>
+  <p class="lead">Pick one track and keep scope tiny. The exact challenges will be revealed closer to the date.</p>
+  <div class="cards">
+    
+    <article class="card half">
+      <h3 class="card-title">
+        <span class="stud yellow" aria-hidden="true"></span> Challenge #1: CSS Playground
+      </h3>
+      <p>Create a wild CSS demo</p>
+      
+      <hr style="
+          border: none;
+          border-top: 2px solid rgba(60, 59, 59, 0.06);
+          margin: 12px 0;
+        ">
+      <p>Put your coding skills to use to build anything that shows off the power (and weirdness) of CSS. Using HTML and JavaScript is fine. AI tools are allowed—just be ready to explain your process.</p>
+       
+    </article>
+    
+    <article class="card half">
+      <h3 class="card-title">
+        <span class="stud red" aria-hidden="true"></span> Challenge #2: Dashboard
+      </h3>
+      <p>Build a small dashboard or visualization</p>
+      
+      <hr style="
+          border: none;
+          border-top: 2px solid rgba(60, 59, 59, 0.06);
+          margin: 12px 0;
+        ">
+      <p>Create something that gathers or presents information in a useful way: could be related to W3C, the Web, or anything you care about. It can be just a concept or a working prototype.</p>
+       
+    </article>
+    
+  </div>
+</section>
+
+<section id="schedule" class="section container" aria-labelledby="rules-title">
+  <h2 id="rules-title">
+    Participation Guidelines
+  </h2>
+
+  <div class="cards">
+    <article class="card half" aria-label="Rules">
+      <h3 class="card-title">
+        <span class="stud green" aria-hidden="true"></span>
+        Rules
+      </h3>
+      <ul>
+        
+        <li>You have 90 minutes to build or sketch.</li>
+        
+        <li>Work solo or in a pair.</li>
+        
+        <li>All work should be created during the hackathon, but reusing your own snippets is fine.</li>
+        
+        <li>AI tools are allowed—just be ready to explain your process.</li>
+        
+      </ul>
+    </article>
+    <article class="card half" aria-label="Submission format">
+      <h3 class="card-title">
+        <span class="stud blue" aria-hidden="true"></span>
+        Submission Format
+      </h3>
+      <ul>
+        
+        <li>Create a GitHub repository for your project.</li>
+        
+        <li>Include your code + any other materials in the repo.</li>
+        
+        <li>Post your project in the GH repo Issue thread for the relevant challenge. Include title, hacker(s), description, repo url and a screenshot.</li>
+        
+      </ul>
+      
+      <p>
+        
+        <a href="https://github.com/w3c/hackathon-tpac-2025/issues" style="text-decoration: underline">Submission Issues ↗</a>
+        
+      </p>
+      
+    </article>
+  </div>
+</section>
+
+<section id="submissions" class="section container" aria-labelledby="submissions-title">
+  <h2 id="submissions-title">
+    Submissions
+  </h2>
+  <p>Projects will be showcased here after the event.</p>
+  <!-- 
+  <p class="lead">All projects will appear here.</p>
+   
+  <div class="mosaic" role="list" aria-label="Submissions grid">
+       
+
+    <div class="submission">
+      <a
+        class="tile one"
+        role="listitem"
+        href="https://github.com/example/example-project"
+        target="_blank"
+        rel="noopener"
+        aria-label="Example name of a project"
+      >
+        <div class="studs" aria-hidden="true"></div>
+        <div class="tile-label">Example name of a project</div>
+      </a>
+      <div class="authors">
+         
+        <a
+          href="https://github.com/alice"
+          target="_blank"
+          rel="noopener"
+          >Alice Example</a
+        >
+          
+      </div>
+    </div>
+      
+
+    <div class="submission">
+      <a
+        class="tile two"
+        role="listitem"
+        href="https://github.com/example/example-project-2"
+        target="_blank"
+        rel="noopener"
+        aria-label="Example name of another project"
+      >
+        <div class="studs" aria-hidden="true"></div>
+        <div class="tile-label">Example name of another project</div>
+      </a>
+      <div class="authors">
+         
+        <a
+          href="https://github.com/bob"
+          target="_blank"
+          rel="noopener"
+          >Bob Example</a
+        >
+         ,   
+        <a
+          href="https://github.com/charliedev"
+          target="_blank"
+          rel="noopener"
+          >Charlie Dev</a
+        >
+          
+      </div>
+    </div>
+     
+  </div> -->
+</section>
+
+<section id="sponsors" class="section container" aria-labelledby="sponsors-title">
+  <h2 id="sponsors-title">
+    Sponsors
+  </h2>
+  
+  <p class="lead sponsors">Thank you to the supporters making this event possible!</p>
+  
+
+  <div class="sponsor-grid" role="list">
+    
+    <a class="sponsor" role="listitem" href="https://holopin.io/" target="_blank" rel="noopener" aria-label="Holopin">
+      
+      <img src="./W3C Hackathon TPAC 2025 — Kobe_files/holopin.png" alt="Holopin logo" loading="lazy" decoding="async">
+      
+    </a>
+    
+    <a class="sponsor" role="listitem" href="https://www.godaddy.com/" target="_blank" rel="noopener" aria-label="GoDaddy">
+      
+      <img src="./W3C Hackathon TPAC 2025 — Kobe_files/godaddy.png" alt="GoDaddy logo" loading="lazy" decoding="async">
+      
+    </a>
+    
+  </div>
+</section>
+
+</main>
+    <footer>
+  <div class="container foot">
+    <div class="legal">© 2025 W3C Hackathon TPAC 2025.</div>
+    <a href="https://www.w3.org/2025/11/TPAC/" target="_blank" rel="noopener">
+      <div class="pill">Main TPAC Website</div>
+    </a>
+  </div>
+</footer>
+
+  
+
+<div id="unA40Editor" class="un-a40editor" aria-hidden="true"></div></body></html>
