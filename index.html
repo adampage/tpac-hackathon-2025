@@ -29,7 +29,6 @@
 var aria = aria || {};
 
 aria.Utils = aria.Utils || {};
-//test
 
 (function () {
   /*
@@ -548,7 +547,7 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
     backdrop-filter: blur(5px) contrast(0.7) brightness(1.1);
   }
   /*tunnel vision*/
-  body.visual-simulation-peripheral-loss #visual-simulator-area {
+  body.visual-simulation-glaucoma #visual-simulator-area {
     mask-image: radial-gradient(circle at center,
       rgba(0,0,0,1) 0%,
       rgba(0,0,0,1) 20%,
@@ -589,12 +588,11 @@ aria.Utils.bindMethods = function (object /* , ...methodNames */) {
     <div id="visual-simulation-panel" role="dialog" aria-modal="true" aria-label="Visual Disabilities" class="hidden">
       <button type="button" id="dialog_close_btn" onclick="closeDialog(this)" aria-label="close">X</button>
       <button data-sim="visual-simulation-low-vision">Low Vision</button>
-      <button data-sim="visual-simulation-peripheral-loss">Peripheral Loss</button>
+      <button data-sim="visual-simulation-glaucoma">Glaucoma</button>
       <button data-sim="visual-simulation-tunnel-vision">Tunnel Vision</button>
       <button data-sim="visual-simulation-floaters">Floaters</button>
       <button data-sim="visual-simulation-glare">Glare</button>
       <button data-sim="visual-simulation-cataracts">Cataracts</button>
-      <button data-sim="visual-simulation-glaucoma">Glaucoma</button>
       <button data-sim="visual-simulation-achromatopsia">Achromatopsia</button>
       <button data-sim="visual-simulation-protanopia">Protanopia</button>
       <button data-sim="visual-simulation-deuteranopia">Deuteranopia</button>
